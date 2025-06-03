@@ -1,0 +1,21 @@
+[project]
+name = "api"
+version = "0.1.0"
+description = "provide api"
+authors = [
+    {name = "Sam Wang"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas (>=2.2.3,<3.0.0)",
+    "fastapi (>=0.115.12,<0.116.0)",
+    "pymysql (>=1.1.1,<2.0.0)",
+    "pytz (>=2025.2,<2026.0)",
+    "uvicorn (>=0.34.3,<0.35.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

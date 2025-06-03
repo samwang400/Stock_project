@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+*.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Poetry
+poetry.lock
+
+# VSCode
+.vscode/
+
+# OS files
+.DS_Store
+
+# Others
+*.log
