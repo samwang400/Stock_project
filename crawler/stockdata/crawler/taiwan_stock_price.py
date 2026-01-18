@@ -244,7 +244,7 @@ def crawler_tpex(date: str,) -> pd.DataFrame:
 
     return df
 
-def stock_pipeline(date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def stock_price_pipeline(date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     
 
     print(f"Start_crawl_twse_{date}_data...")

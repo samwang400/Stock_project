@@ -18,12 +18,22 @@ def scheduled_task():
 
     # Run taiwan_stock_price
     subprocess.call([
-        "poetry", "run", "python", "-m", "stockdata.main", "taiwan_stock_price", yesterday, yesterday
+        "poetry", "run", "python", "-m", "stockdata.main", "taiwan_stock_price", today, today
     ])
 
     # Run taiwan_future_daily
     subprocess.call([
-        "poetry", "run", "python", "-m", "stockdata.main", "taiwan_future_daily", yesterday, yesterday
+        "poetry", "run", "python", "-m", "stockdata.main", "taiwan_future_daily", today, today
+    ])
+    
+    # Run taiwan_future_daily
+    subprocess.call([
+        "poetry", "run", "python", "-m", "stockdata.main", "taiwan_stock_info"
+    ])
+    
+    # Run taiwan_future_daily
+    subprocess.call([
+        "poetry", "run", "python", "-m", "stockdata.main", "taiwan_share_hodling"
     ])
 
 if __name__ == "__main__":

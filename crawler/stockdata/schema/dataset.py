@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from pydantic import parse_obj_as, ValidationError
 from typing import Type
 import pandas as pd
-
+from typing import Optional
 
 class TaiwanStockPrice(BaseModel):
     StockID: str
@@ -31,6 +31,62 @@ class TaiwanFuturesDaily(BaseModel):
     SettlementPrice: float
     OpenInterest: int
     TradingSession: str
+
+
+class TaiwanStockInfo(BaseModel):
+    StockID: int
+    StockName: str
+    MarketType: str
+    IndustryType: str   
+
+
+class TDCCShareholding(BaseModel):
+    Date: str
+    StockID: str
+    ShareholdingLevel: int
+    NumberOfHolders: int
+    NumberOfShares: int
+    PercentageOfTotalShares: float
+
+class TaiwanInstitutionalInvestor(BaseModel):
+    StockID: str
+    StockName: str
+    ForeignBuy: int
+    ForeignSell: int
+    ForeignNet: int
+    ForeignDealerBuy: int
+    ForeignDealerSell: int
+    ForeignDealerNet: int
+    InvestmentTrustBuy: int
+    InvestmentTrustSell: int
+    InvestmentTrustNet: int
+    DealerSelfBuy: int
+    DealerSelfSell: int
+    DealerSelfNet: int
+    DealerHedgeBuy: int
+    DealerHedgeSell: int
+    DealerHedgeNet: int
+    ThreeInstitutionNet: int
+    Date: str
+
+class TaiwanMarginPurchaseShortSale(BaseModel):
+    StockID: str
+    StockName: str
+    MarginPurchaseBuy: int
+    MarginPurchaseSell: int
+    MarginPurchaseCashRepayment: int
+    MarginPurchaseYesterdayBalance: int
+    MarginPurchaseTodayBalance: int
+    MarginPurchaseLimit: int
+    ShortSaleBuy: int
+    ShortSaleSell: int
+    ShortSaleCashRepayment: int
+    ShortSaleYesterdayBalance: int
+    ShortSaleTodayBalance: int
+    ShortSaleLimit: int
+    OffsetLoanAndShort: int
+    Note: str
+    Date: str
 
 
 def check_schema(df: pd.DataFrame, schema: Type) -> pd.DataFrame:

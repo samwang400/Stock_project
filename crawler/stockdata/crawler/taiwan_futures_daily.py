@@ -112,7 +112,6 @@ def future_pipeline(date: str) -> pd.DataFrame:
     df = crawler_futures(date)
 
     df = colname_zh2en(df.copy())
-    print(f"Start_clean_taifex_{date}_data...")
     df = clean_data(df.copy())
             
     df["Date"] = date

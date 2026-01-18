@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir poetry
 # Copy the entire application first
 COPY . /app
 
-# Disable virtual environments and install dependencies only (不安裝當前專案)
+# Disable virtual environments and install dependencies only
 RUN poetry config virtualenvs.create false \
  && poetry install --no-interaction --no-ansi --no-root
 
