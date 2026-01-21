@@ -21,3 +21,6 @@ poetry.lock
 
 # Others
 *.log
+
+# postgres-data
+postgres-data/

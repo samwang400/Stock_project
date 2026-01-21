@@ -15,4 +15,4 @@ RUN poetry config virtualenvs.create false \
  && poetry install --no-interaction --no-ansi --no-root
 
 # Default command to run your scheduler script
-CMD ["python", "scheduler.py"]
+CMD ["python", "stockdata.main.py"]

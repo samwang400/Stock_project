@@ -1,0 +1,68 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    command: ["mysqld", "--default-authentication-plugin=mysql_native_password"]
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: Asia/Taipei
+    volumes:
+      - mysql:/var/lib/mysql
+    networks:
+      - dev
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    ports:
+      - "8000:80"
+    depends_on:
+      - mysql
+    environment:
+      PMA_HOST: ${PMA_HOST}
+      PMA_USER: ${PMA_USER}
+      PMA_PASSWORD: ${PMA_PASSWORD}
+    networks:
+      - dev
+
+  stockdata_api:
+    image: stockdata_api
+    ports:
+      - "8888:8888"
+    depends_on:
+      - mysql
+    environment:
+      MYSQL_DATA_HOST: ${STOCKDATA_API_MYSQL_HOST}
+      MYSQL_DATA_USER: ${STOCKDATA_API_MYSQL_USER}
+      MYSQL_DATA_PASSWORD: ${STOCKDATA_API_MYSQL_PASSWORD}
+      MYSQL_DATA_PORT: ${STOCKDATA_API_MYSQL_PORT}
+      MYSQL_DATA_DATABASE: ${STOCKDATA_API_MYSQL_DB}
+    networks:
+      - dev
+    restart: unless-stopped
+
+  stockdata_crawler:
+    image: stockdata_crawler
+    depends_on:
+      - mysql
+    environment:
+      MYSQL_DATA_HOST: ${STOCKDATA_CRAWLER_MYSQL_HOST}
+      MYSQL_DATA_USER: ${STOCKDATA_CRAWLER_MYSQL_USER}
+      MYSQL_DATA_PASSWORD: ${STOCKDATA_CRAWLER_MYSQL_PASSWORD}
+      MYSQL_DATA_PORT: ${STOCKDATA_CRAWLER_MYSQL_PORT}
+      MYSQL_DATA_DATABASE: ${STOCKDATA_CRAWLER_MYSQL_DB}
+    profiles:
+      - manual # for airflow
+    networks:
+      - dev
+
+networks:
+  dev:
+
+volumes:
+  mysql:
+    external: true
