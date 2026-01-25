@@ -35,33 +35,21 @@ services:
       - "8888:8888"
     depends_on:
       - mysql
+    env_file:
+      - .env
     environment:
-      MYSQL_DATA_HOST: ${STOCKDATA_API_MYSQL_HOST}
-      MYSQL_DATA_USER: ${STOCKDATA_API_MYSQL_USER}
-      MYSQL_DATA_PASSWORD: ${STOCKDATA_API_MYSQL_PASSWORD}
-      MYSQL_DATA_PORT: ${STOCKDATA_API_MYSQL_PORT}
-      MYSQL_DATA_DATABASE: ${STOCKDATA_API_MYSQL_DB}
+      MYSQL_DATA_HOST: ${MYSQL_HOST}
+      MYSQL_DATA_USER: ${MYSQL_USER}
+      MYSQL_DATA_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATA_PORT: ${MYSQL_PORT}
+      MYSQL_DATA_DATABASE: ${MYSQL_DATABASE}
     networks:
       - dev
     restart: unless-stopped
 
-  stockdata_crawler:
-    image: stockdata_crawler
-    depends_on:
-      - mysql
-    environment:
-      MYSQL_DATA_HOST: ${STOCKDATA_CRAWLER_MYSQL_HOST}
-      MYSQL_DATA_USER: ${STOCKDATA_CRAWLER_MYSQL_USER}
-      MYSQL_DATA_PASSWORD: ${STOCKDATA_CRAWLER_MYSQL_PASSWORD}
-      MYSQL_DATA_PORT: ${STOCKDATA_CRAWLER_MYSQL_PORT}
-      MYSQL_DATA_DATABASE: ${STOCKDATA_CRAWLER_MYSQL_DB}
-    profiles:
-      - manual # for airflow
-    networks:
-      - dev
-
 networks:
   dev:
+    external: true
 
 volumes:
   mysql:
