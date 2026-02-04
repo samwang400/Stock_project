@@ -1,0 +1,89 @@
+services:
+  redash-postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${REDASH_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${REDASH_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${REDASH_POSTGRES_DB}
+    volumes:
+      - redash-postgres:/var/lib/postgresql/data  
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${REDASH_POSTGRES_USER} -d ${REDASH_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dev
+    restart: unless-stopped
+
+  redash-redis:
+    image: redis:7
+    volumes:
+      - redash-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - dev
+    restart: unless-stopped
+
+  redash-server:
+    image: redash/redash:latest
+    depends_on:
+      - redash-postgres
+      - redash-redis
+    ports:
+      - "5000:5000"
+    environment:
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: "INFO"
+      REDASH_REDIS_URL: "redis://redash-redis:6379/0"
+      REDASH_DATABASE_URL: ${REDASH_DATABASE_URL}
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET}
+      REDASH_SECRET_KEY: ${REDASH_SECRET_KEY}
+    networks:
+      - dev
+    restart: unless-stopped
+    command: server
+
+  redash-scheduler:
+    image: redash/redash:latest
+    depends_on:
+      - redash-server
+    environment:
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: "INFO"
+      REDASH_REDIS_URL: "redis://redash-redis:6379/0"
+      REDASH_DATABASE_URL: ${REDASH_DATABASE_URL}
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET}
+      REDASH_SECRET_KEY: ${REDASH_SECRET_KEY}
+    networks:
+      - dev
+    restart: unless-stopped
+    command: scheduler
+
+  redash-worker:
+    image: redash/redash:latest
+    depends_on:
+      - redash-server
+    environment:
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: "INFO"
+      REDASH_REDIS_URL: "redis://redash-redis:6379/0"
+      REDASH_DATABASE_URL: ${REDASH_DATABASE_URL}
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET}
+      REDASH_SECRET_KEY: ${REDASH_SECRET_KEY}
+    networks:
+      - dev
+    restart: unless-stopped
+    command: worker
+
+networks:
+  dev:
+    external: true
+
+volumes:
+  redash-postgres:
+  redash-redis:
