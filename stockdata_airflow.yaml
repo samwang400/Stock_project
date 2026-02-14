@@ -24,6 +24,8 @@ services:
       - "8080:8080"
     depends_on:
       - airflow-postgres
+      - statsd-exporter
+      
     environment:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -32,10 +34,20 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+      
+      AIRFLOW__METRICS__STATSD_ON: 'true'
+      AIRFLOW__METRICS__STATSD_HOST: statsd-exporter
+      AIRFLOW__METRICS__STATSD_PORT: 8125
+      AIRFLOW__METRICS__STATSD_PREFIX: airflow
+      AIRFLOW__METRICS__STATSD_DATADOG_ENABLED: 'false'
+      AIRFLOW__METRICS__STATSD_DATADOG_TAGS: 'false'
+      
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
+      
+      
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
@@ -56,6 +68,28 @@ services:
       retries: 5
     networks:
       - dev
+
+  statsd-exporter:
+    image: prom/statsd-exporter:latest
+    container_name: statsd-exporter
+    ports:
+      - "9102:9102"      # Prometheus metrics endpoint
+      - "8125:8125/udp"  # StatsD input (UDP)
+    command:
+      - "--statsd.mapping-config=/etc/statsd/statsd_mapping.yml"
+      - "--statsd.listen-udp=:8125"
+      - "--web.listen-address=:9102"
+    volumes:
+      - ./monitoring/airflow/statsd_mapping.yml:/etc/statsd/statsd_mapping.yml:ro
+    networks:
+      - dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9102/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 
 networks:
   dev:

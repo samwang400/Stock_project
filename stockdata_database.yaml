@@ -28,6 +28,22 @@ services:
     networks:
       - dev
 
+  mysql-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysql-exporter
+    ports:
+      - "9104:9104"
+    environment:
+      - MYSQLD_EXPORTER_DATA_SOURCE_NAME=${MYSQL_USER}:${MYSQL_PASSWORD}@(mysql:3306)/
+    depends_on:
+      - mysql
+    command:
+      - "--mysqld.address=mysql:3306"
+      - "--mysqld.username=${MYSQL_USER}"
+    networks:
+      - dev
+    restart: unless-stopped
+
   stockdata-api:
     image: stockdata_api
     ports:
@@ -45,6 +61,7 @@ services:
     networks:
       - dev
     restart: unless-stopped
+
 
 networks:
   dev:
