@@ -14,6 +14,13 @@ services:
     networks:
       - dev
     restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.role == manager
 
   grafana:
     image: grafana/grafana:latest
@@ -30,6 +37,13 @@ services:
     networks:
       - dev
     restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.role == manager
 
   node-exporter:
     image: prom/node-exporter:latest
@@ -39,7 +53,7 @@ services:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
       - '--no-collector.softnet'
       - '--no-collector.netstat'
     volumes:
@@ -49,6 +63,10 @@ services:
     networks:
       - dev
     restart: unless-stopped
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
     
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -67,6 +85,10 @@ services:
     networks:
       - dev
     restart: unless-stopped
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
 
 networks:
   dev:

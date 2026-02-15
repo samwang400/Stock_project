@@ -15,6 +15,14 @@ services:
     networks:
       - dev
     restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+      placement:
+        constraints:
+          - node.role == manager
 
   redash-redis:
     image: redis:7
@@ -28,6 +36,10 @@ services:
     networks:
       - dev
     restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
   redash-server:
     image: redash/redash:latest
@@ -47,6 +59,10 @@ services:
       - dev
     restart: unless-stopped
     command: server
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
   redash-scheduler:
     image: redash/redash:latest
@@ -63,6 +79,10 @@ services:
       - dev
     restart: unless-stopped
     command: scheduler
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
   redash-worker:
     image: redash/redash:latest
@@ -79,6 +99,10 @@ services:
       - dev
     restart: unless-stopped
     command: worker
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
 networks:
   dev:

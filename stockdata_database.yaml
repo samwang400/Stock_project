@@ -14,6 +14,14 @@ services:
       - mysql:/var/lib/mysql
     networks:
       - dev
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+      placement:
+        constraints:
+          - node.role == manager
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
@@ -27,6 +35,10 @@ services:
       PMA_PASSWORD: ${PMA_PASSWORD}
     networks:
       - dev
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
   mysql-exporter:
     image: prom/mysqld-exporter:latest
@@ -43,6 +55,10 @@ services:
     networks:
       - dev
     restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
   stockdata-api:
     image: stockdata_api
@@ -61,6 +77,10 @@ services:
     networks:
       - dev
     restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
 
 networks:
