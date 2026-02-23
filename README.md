@@ -2,6 +2,8 @@
 
 A production-grade data pipeline that collects, stores, and serves Taiwan stock market data. Crawlers run daily via Apache Airflow, data is stored in MySQL, and exposed through a FastAPI REST API. Full observability is provided by Prometheus and Grafana.
 
+![System Architecture](architecture.png)
+
 ---
 
 ## Architecture Overview
@@ -90,18 +92,27 @@ Stock_project/
 │       │   ├── taiwan_margin_short_sale.py
 │       │   ├── taiwan_share_holding.py
 │       │   └── taiwan_futures_daily.py
-│       ├── backend/db/                # Database client and ORM layer
-│       ├── schema/                    # Pydantic data models
+│       ├── backend/
+│       │   └── db/
+│       │       ├── clients.py         # SQLAlchemy / pymysql connection clients
+│       │       ├── db.py              # Table definitions and upsert logic
+│       │       └── router.py          # Routes dataset name to the correct DB writer
+│       ├── schema/
+│       │   └── dataset.py            # Pydantic models for all six datasets
 │       └── main.py                    # CLI entrypoint
 ├── monitoring/
 │   ├── prometheus/
 │   │   ├── prometheus.yml
-│   │   └── alerts/alerts.yml
+│   │   └── alerts/
+│   │       └── alerts.yml
 │   ├── grafana/
 │   │   ├── dashboards/
+│   │   │   └── Stockdata Monitoring-*.json    # Pre-built dashboard, auto-loaded at startup
 │   │   └── provisioning/
+│   │       └── datasources/
+│   │           └── datasource.yml             # Registers Prometheus as default datasource
 │   └── airflow/
-│       └── statsd_mapping.yml
+│       └── statsd_mapping.yml                 # Maps Airflow StatsD metrics to Prometheus labels
 ├── stockdata_airflow.yaml
 ├── stockdata_database.yaml
 ├── stockdata_monitoring.yaml
@@ -201,16 +212,87 @@ docker exec -it $(docker ps -q -f name=redash-server) python manage.py database 
 
 ---
 
-## Data Tables
+## Database Schema
 
-| Table | Source | Update Frequency |
+All tables are stored in MySQL 8.0. Column types follow the Pydantic models defined in `crawler/stockdata/schema/dataset.py`.
+
+### taiwan_stock_price
+
+| Column | Type | Description |
 |---|---|---|
-| taiwan_stock_price | TWSE | Daily |
-| taiwan_stock_info | TWSE | Daily |
-| taiwan_institutional_investor | TWSE | Daily |
-| taiwan_margin_short_sale | TWSE | Daily |
-| taiwan_share_holding | TDCC | Weekly |
-| taiwan_future_daily | TAIFEX | Daily |
+| StockID | VARCHAR | Stock ticker symbol |
+| Date | DATE | Trading date |
+| Open | FLOAT | Opening price |
+| Max | FLOAT | Daily high |
+| Min | FLOAT | Daily low |
+| Close | FLOAT | Closing price |
+| Change | FLOAT | Price change from previous close |
+| TradeVolume | BIGINT | Total shares traded |
+| Transaction | INT | Number of transactions |
+| TradeValue | BIGINT | Total trade value in TWD |
+
+### taiwan_stock_info
+
+| Column | Type | Description |
+|---|---|---|
+| StockID | INT | Stock ticker (primary key) |
+| StockName | VARCHAR | Company name |
+| MarketType | VARCHAR | TWSE or TPEX |
+| IndustryType | VARCHAR | Industry classification |
+
+### taiwan_institutional_investor
+
+| Column | Type | Description |
+|---|---|---|
+| StockID | VARCHAR | Stock ticker symbol |
+| Date | DATE | Trading date |
+| ForeignBuy / ForeignSell / ForeignNet | INT | Foreign investor buy, sell, net |
+| ForeignDealerBuy / ForeignDealerSell / ForeignDealerNet | INT | Foreign dealer sub-account |
+| InvestmentTrustBuy / InvestmentTrustSell / InvestmentTrustNet | INT | Investment trust (投信) |
+| DealerSelfBuy / DealerSelfSell / DealerSelfNet | INT | Dealer proprietary trading |
+| DealerHedgeBuy / DealerHedgeSell / DealerHedgeNet | INT | Dealer hedge account |
+| ThreeInstitutionNet | INT | Combined net of all three institutions |
+
+### taiwan_margin_short_sale
+
+| Column | Type | Description |
+|---|---|---|
+| StockID | VARCHAR | Stock ticker symbol |
+| Date | DATE | Trading date |
+| MarginPurchaseBuy / MarginPurchaseSell | INT | Margin purchase buy and sell |
+| MarginPurchaseCashRepayment | INT | Cash repayment for margin |
+| MarginPurchaseYesterdayBalance / MarginPurchaseTodayBalance | INT | Margin balance change |
+| MarginPurchaseLimit | INT | Margin purchase ceiling |
+| ShortSaleBuy / ShortSaleSell | INT | Short sale buy and sell |
+| ShortSaleCashRepayment | INT | Cash repayment for short |
+| ShortSaleYesterdayBalance / ShortSaleTodayBalance | INT | Short balance change |
+| ShortSaleLimit | INT | Short sale ceiling |
+| OffsetLoanAndShort | INT | Offset between margin and short |
+
+### taiwan_share_holding
+
+| Column | Type | Description |
+|---|---|---|
+| Date | DATE | Record date |
+| StockID | VARCHAR | Stock ticker symbol |
+| ShareholdingLevel | INT | Bracket index (1-15, grouped by share count range) |
+| NumberOfHolders | INT | Number of shareholders in this bracket |
+| NumberOfShares | INT | Total shares held in this bracket |
+| PercentageOfTotalShares | FLOAT | Percentage of total outstanding shares |
+
+### taiwan_futures_daily
+
+| Column | Type | Description |
+|---|---|---|
+| Date | DATE | Trading date |
+| FuturesID | VARCHAR | Futures contract identifier |
+| ContractDate | VARCHAR | Delivery month |
+| Open / Max / Min / Close | FLOAT | OHLC prices |
+| Change / ChangePer | FLOAT | Price change and percentage change |
+| Volume | FLOAT | Total traded volume |
+| SettlementPrice | FLOAT | Daily settlement price |
+| OpenInterest | INT | Open interest at end of day |
+| TradingSession | VARCHAR | Regular or after-hours session |
 
 ---
 
@@ -226,7 +308,25 @@ Prometheus scrape targets:
 | node-exporter | 9100 | Host CPU, memory, disk, network |
 | cadvisor | 8081 | Per-container CPU, memory, network I/O |
 
-Alert rules are defined in `monitoring/prometheus/alerts/alerts.yml`. The pre-built Grafana dashboard is provisioned automatically from `monitoring/grafana/dashboards/`.
+Alert rules are defined in `monitoring/prometheus/alerts/alerts.yml`.
+
+**Grafana provisioning** is handled automatically at container startup via two directories mounted into the Grafana container:
+
+`monitoring/grafana/provisioning/datasources/datasource.yml` — registers Prometheus as the default datasource:
+
+```yaml
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 15s
+      queryTimeout: 60s
+```
+
+`monitoring/grafana/dashboards/` — contains pre-built dashboard JSON files that Grafana loads on startup. The included dashboard (`Stockdata Monitoring-*.json`) covers API request rates, DB query durations, active connections, and error counts. To add a new dashboard, export it from the Grafana UI as JSON and drop the file into this directory, then redeploy the Grafana service.
 
 ---
 
