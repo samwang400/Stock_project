@@ -2,7 +2,7 @@
 
 A production-grade data pipeline that collects, stores, and serves Taiwan stock market data. Crawlers run daily via Apache Airflow, data is stored in MySQL, and exposed through a FastAPI REST API. Full observability is provided by Prometheus and Grafana.
 
-![System Architecture](architecture.png)
+
 
 ---
 
