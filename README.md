@@ -140,38 +140,44 @@ docker network create --driver overlay --attachable dev
 Create a `.env` file in the project root:
 
 ```env
-# MySQL
-MYSQL_DATABASE=stockdata
-MYSQL_USER=stockuser
-MYSQL_PASSWORD=your_password
-MYSQL_ROOT_PASSWORD=your_root_password
+
 MYSQL_HOST=mysql
+MYSQL_ROOT_PASSWORD=test
+MYSQL_DATABASE=stockdata
+MYSQL_USER=root
+MYSQL_PASSWORD=test
 MYSQL_PORT=3306
 
-# phpMyAdmin
-PMA_HOST=mysql
-PMA_USER=stockuser
-PMA_PASSWORD=your_password
+PMA_HOST=${MYSQL_HOST}
+PMA_USER=root
+PMA_PASSWORD=${MYSQL_ROOT_PASSWORD}
 
-# Airflow
+MYSQL_DATA_HOST=${MYSQL_HOST}
+MYSQL_DATA_USER=${MYSQL_USER}
+MYSQL_DATA_PASSWORD=${MYSQL_PASSWORD}
+MYSQL_DATA_PORT=${MYSQL_PORT}
+MYSQL_DATA_DATABASE=${MYSQL_DATABASE}
+
 AIRFLOW_POSTGRES_USER=airflow
 AIRFLOW_POSTGRES_PASSWORD=airflow
 AIRFLOW_POSTGRES_DB=airflow
 AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
-_AIRFLOW_WWW_USER_USERNAME=admin
-_AIRFLOW_WWW_USER_PASSWORD=admin
 
-# Redash
+_AIRFLOW_WWW_USER_USERNAME=airflow
+_AIRFLOW_WWW_USER_PASSWORD=airflow
+
 REDASH_POSTGRES_USER=redash
 REDASH_POSTGRES_PASSWORD=redash
 REDASH_POSTGRES_DB=redash
-REDASH_DATABASE_URL=postgresql://redash:redash@redash-postgres/redash
-REDASH_COOKIE_SECRET=change_this_secret
-REDASH_SECRET_KEY=change_this_key
 
-# Grafana
+REDASH_DATABASE_URL=postgresql://redash:redash@redash-postgres/redash
+REDASH_COOKIE_SECRET=redash_cookie_secret
+REDASH_SECRET_KEY=redash_secret_key
+
 GF_SECURITY_ADMIN_USER=admin
 GF_SECURITY_ADMIN_PASSWORD=admin
+GF_INSTALL_PLUGINS=
+GF_SERVER_ROOT_URL=http://localhost:3000
 ```
 
 ### 2. Build Docker images
